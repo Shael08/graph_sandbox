@@ -260,6 +260,8 @@ paket-files/
 __pycache__/
 *.pyc
 
+Clique
+Coloring
 *.o
 *.lp
 *.clq
