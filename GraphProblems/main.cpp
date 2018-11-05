@@ -111,7 +111,7 @@ int main(const int argc, char *argv[])
 
 	g.init_dsatur();
 
-	g.iterated_greedy_coloring();
+	//g.iterated_greedy_coloring();
 
 	//std::cout << "pooling type: clique \nvertices selecting heuristics: most common neighbors" << std::endl;
 	//g.init_zykov_tree(g.lp_relaxation, g.most_common_neighbors);

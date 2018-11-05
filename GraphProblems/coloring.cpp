@@ -5,8 +5,9 @@
 #include <glpk.h> 
 #include <limits>  
 #include <cmath> 
-#include <algorithm>
 #include <ctime>
+#include <map>
+#include <algorithm>
 
 #pragma region greedy_coloring
 
@@ -229,7 +230,7 @@ bool graph::sort_increasing_size(const std::vector<int> &color_classes_1, const 
 
 bool graph::sort_decreasing_size(const std::vector<int> &color_classes_1, const std::vector<int> &color_classes_2) {
 	return color_classes_1.size() > color_classes_2.size();
-}
+} 
 
 void graph::sort_increasing_degree(std::vector<std::vector<int>>& color_classes) const
 {
@@ -239,6 +240,7 @@ void graph::sort_increasing_degree(std::vector<std::vector<int>>& color_classes)
 		mini_pos = i;
 		for (unsigned j = i + 1; j < color_classes.size(); j++)
 		{
+
 			if (get_color_class_degree(color_classes[j]) < get_color_class_degree(color_classes[mini_pos])) 
 			{
 				mini_pos = j;
@@ -303,6 +305,8 @@ void graph::init_dsatur()
 {
 	std::cout << "\nColoring with DSATUR algorithm \n" << std::endl;
 
+	//std::vector<int> sorted_vertices = sort_graph(adjacency_matrix_, vertices_);
+
 	std::clock_t start = std::clock();
 
 	int result = dsatur(adjacency_matrix_, vertices_);
@@ -316,80 +320,149 @@ void graph::init_dsatur()
 
 int graph::dsatur(bool** adjacency_matrix, const int vertices)
 {
-	int *result = new int[vertices];
+	std::vector<std::vector<int> > color_class(1);
 	bool *available_colors = new bool[vertices];
+	int* result = new int[vertices];
 
 	for (int i = 0; i < vertices; i++)
 	{
+		available_colors[i] = true;
 		result[i] = -1;
-		available_colors[i] = false;
 	}
 
+	color_class[0].push_back(0);
 	result[0] = 0;
 
-	for(int n = 0 ; ;n++)
+	for (int n = 0; ; n++) 
 	{
 
-		int maximal_colored_neighbor = 0;
-		int vertices_with_maximal_colored_neighbors = -1;
-
-		for (int i = 0; i < vertices; i++)
-		{
-
-			int number_of_colored_neighbors = 0;
-			for (int j = 0; j < vertices; j++)
-			{
-				if (adjacency_matrix[i][j] && result[j] != -1)
-				{
-					number_of_colored_neighbors++;
-				}
-			}
-
-			if (result[i] == -1 && maximal_colored_neighbor < number_of_colored_neighbors)
-			{
-				maximal_colored_neighbor = number_of_colored_neighbors;
-				vertices_with_maximal_colored_neighbors = i;
-			}
-		}
+		const int vertices_with_maximal_colored_neighbors = find_vertex_with_maximal_color_degree(adjacency_matrix, vertices, color_class, result);
 
 		if (vertices_with_maximal_colored_neighbors == -1) break;
 
-		for (int j = 0; j < vertices; j++)
+		for (int i = 0; i < vertices; i++)
 		{
-			if (adjacency_matrix[vertices_with_maximal_colored_neighbors][j] == 1 && result[j] != -1)
+			if (adjacency_matrix[vertices_with_maximal_colored_neighbors][i] && result[i] != -1)
 			{
-				available_colors[result[j]] = true;
+				available_colors[result[i]] = false;
 			}
 		}
 
-		int cr;
-		for (cr = 0; cr < vertices; cr++)
-			if (!available_colors[cr])
-				break;
-
-		result[vertices_with_maximal_colored_neighbors] = cr;
-
-		for (int j = 0; j < vertices; j++)
+		int c;
+		for (c = 0; c < vertices; c++)
 		{
-			available_colors[j] = false;
+			if (available_colors[c]) break;
+		}
+
+		result[vertices_with_maximal_colored_neighbors] = c;
+		if (color_class.size() < c + 1) color_class.resize(c + 1);
+		
+		color_class[c].push_back(vertices_with_maximal_colored_neighbors);
+
+		for (int i = 0; i < vertices; i++)
+		{
+			available_colors[i] = true;
 		}
 
 	}
 
-	int max = 0;
-	for (int u = 0; u < vertices; u++)
-	{
-		if (result[u] == -1) std::cout << "error!!!" << std::endl;
-		if (result[u] > max) max = result[u];
-	}
+	//int max = 0;
+	//for (int u = 0; u < vertices; u++)
+	//{
+	//	if (result[u] == -1) std::cout << "error!!!" << std::endl;
+	//	if (result[u] > max) max = result[u];
+	//}
 
-	max += 1;
+	//max += 1;
+
+	//for (int i = 0; i < color_class.size(); i++)
+	//{
+	//	if (color_class[i].size() > 1)
+	//	{
+	//		for (std::vector<int>::iterator it = color_class[i].begin(); it != color_class[i].end(); ++it)
+	//		{
+	//			
+	//			for (std::vector<int>::iterator it2 = it + 1; it2 != color_class[i].end(); ++it2)
+	//			{
+	//				if (adjacency_matrix[*it][*it2]) std::cout << "error!!!" << std::endl;
+	//			}
+	//		}
+	//	}
+	//}
 
 	delete[] result;
 	delete[] available_colors;
 
-	return max;
+	return color_class.size();
 }
+
+int graph::find_vertex_with_maximal_color_degree(bool** adjacency_matrix, const int vertices, std::vector<std::vector<int> > color_class, const int* result)
+{
+	
+	int maximal_color_degree_vertex = -1;
+	int maximal_color_degree = 0;
+
+	for(int i = 0; i < vertices; i++)
+	{
+		if(result[i] == -1)
+		{
+			int color_degree = 0;
+
+			for(unsigned j = 0; j < color_class.size(); j++)
+			{
+				bool found = false;
+				for(std::vector<int>::iterator it = color_class[j].begin(); it!= color_class[j].end() && !found; ++it)
+				{
+
+					if (adjacency_matrix[i][*it]) 
+					{
+						color_degree++;
+						found = true;
+					}
+
+				}
+
+			}
+
+			if(color_degree > maximal_color_degree)
+			{
+				maximal_color_degree = color_degree;
+				maximal_color_degree_vertex = i;
+			}
+
+
+		}
+	}
+
+	std::cout << maximal_color_degree << std::endl;
+	return maximal_color_degree_vertex;
+}
+
+//std::vector<int> graph::sort_graph(bool** adjacency_matrix, const int vertices)
+//{
+//	std::vector<std::pair<int, int> > ordered_set;
+//	std::vector<int> sorted_vertices;
+//
+//	for(int i = 0; i < vertices; i++)
+//	{
+//		int degree = 0;
+//		for(int j = 0; j < vertices; j++)
+//		{
+//			if (adjacency_matrix[i][j]) degree++;
+//		}
+//		ordered_set.emplace_back(std::make_pair(degree, i));
+//	}
+//
+//	std::sort(ordered_set.begin(), ordered_set.end(), [](const std::pair<int, int> a, const std::pair<int, int> b) {return a.first > b.first; });
+//
+//	for(int i = 0; i < ordered_set.size(); i++)
+//	{
+//		sorted_vertices.push_back(ordered_set[i].second);
+//	}
+//
+//
+//	return sorted_vertices;
+//}
 
 #pragma endregion 
 

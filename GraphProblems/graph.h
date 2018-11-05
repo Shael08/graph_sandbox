@@ -92,6 +92,10 @@ private:
 
 	static int dsatur(bool ** adjacency_matrix, const int vertices);
 
+	static int find_vertex_with_maximal_color_degree(bool ** adjacency_matrix, const int vertices, std::vector<std::vector<int> > color_class, const int* result);
+
+	std::vector<int> sort_graph(bool ** adjacency_matrix, const int vertices);
+
 
 
 protected:
