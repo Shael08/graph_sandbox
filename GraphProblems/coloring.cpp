@@ -301,7 +301,7 @@ void graph::sort_random_order(std::vector<std::vector<int>>& color_classes)
 
 #pragma region DSATUR
 
-void graph::init_dsatur()
+void graph::init_dsatur() const
 {
 	std::cout << "\nColoring with DSATUR algorithm \n" << std::endl;
 
@@ -437,32 +437,6 @@ int graph::find_vertex_with_maximal_color_degree(bool** adjacency_matrix, const 
 	std::cout << maximal_color_degree << std::endl;
 	return maximal_color_degree_vertex;
 }
-
-//std::vector<int> graph::sort_graph(bool** adjacency_matrix, const int vertices)
-//{
-//	std::vector<std::pair<int, int> > ordered_set;
-//	std::vector<int> sorted_vertices;
-//
-//	for(int i = 0; i < vertices; i++)
-//	{
-//		int degree = 0;
-//		for(int j = 0; j < vertices; j++)
-//		{
-//			if (adjacency_matrix[i][j]) degree++;
-//		}
-//		ordered_set.emplace_back(std::make_pair(degree, i));
-//	}
-//
-//	std::sort(ordered_set.begin(), ordered_set.end(), [](const std::pair<int, int> a, const std::pair<int, int> b) {return a.first > b.first; });
-//
-//	for(int i = 0; i < ordered_set.size(); i++)
-//	{
-//		sorted_vertices.push_back(ordered_set[i].second);
-//	}
-//
-//
-//	return sorted_vertices;
-//}
 
 #pragma endregion 
 

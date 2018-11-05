@@ -147,6 +147,6 @@ public:
 
 	void init_zykov_tree(zykov_pooling_heuristic pooling, zykov_selecting_vertices_heuristics choosing_vertices);
 
-	void init_dsatur();
+	void init_dsatur() const;
 
 };
