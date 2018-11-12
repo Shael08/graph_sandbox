@@ -88,9 +88,11 @@ private:
 
 	int get_color_class_degree( std::vector<int> &color_class) const;
 
+	static std::pair<bool, bool> is_periodic(const std::vector<int> &array_of_sums);
+
 #pragma endregion 
 
-	static int dsatur(bool ** adjacency_matrix, const int vertices);
+	static std::vector<std::vector<int> > dsatur(bool ** adjacency_matrix, const int vertices);
 
 	static int find_vertex_with_maximal_color_degree(bool ** adjacency_matrix, const int vertices, std::vector<std::vector<int> > color_class, const int* result);
 

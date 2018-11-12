@@ -4,6 +4,11 @@
 #include "coloring_ip_generator.h"
 #include "clique_ip_generator.h"
 
+#include <cstdlib>
+#include <iostream>
+
+
+
 void coloring_ip_factory(char* file_name, std::string constrains_index)
 {
 	coloring_ip_generator ip_generator(file_name);
@@ -107,11 +112,12 @@ int main(const int argc, char *argv[])
 
 	graph g(argv[1]);
 
-	g.init_greedy_coloring();
+	//g.init_greedy_coloring();
 
-	g.init_dsatur();
+	g.iterated_greedy_coloring();
 
-	//g.iterated_greedy_coloring();
+	//g.init_dsatur();
+
 
 	//std::cout << "pooling type: clique \nvertices selecting heuristics: most common neighbors" << std::endl;
 	//g.init_zykov_tree(g.lp_relaxation, g.most_common_neighbors);

@@ -8,6 +8,8 @@
 #include <ctime>
 #include <map>
 #include <algorithm>
+#include <fstream>
+#include <random>
 
 #pragma region greedy_coloring
 
@@ -15,11 +17,11 @@ void graph::init_greedy_coloring() const
 {
 	std::cout << "\nColoring with greedy coloring algorithm \n" << std::endl;
 
-	std::clock_t start = std::clock();
+	const std::clock_t start = std::clock();
 
-	int result = greedy_coloring(adjacency_matrix_, vertices_);
+	const int result = greedy_coloring(adjacency_matrix_, vertices_);
 
-	double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	double duration = (std::clock() - start) / double(CLOCKS_PER_SEC);
 
 	std::cout << "Running time: " << duration << '\n';
 
@@ -86,59 +88,221 @@ int graph::greedy_coloring(bool** adjacency_matrix, const int coloring_until)
 
 #pragma region iterated_greedy_coloring
 
+const int fib[16] = {8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946 };
+
 void graph::iterated_greedy_coloring() const
 {
-	std::vector<std::vector<int> > color_classes;
-	color_classes.resize(vertices_);
-	for(int i = 0; i < vertices_; i++)
-	{
-		color_classes[i].push_back(i);
-	}
-
 	std::cout << "\nColoring with iterated greedy algorithm \n" << std::endl;
 
-	std::clock_t start = std::clock();
+	const std::clock_t start = std::clock();
 
-	int min_color = recolor_color_class(color_classes);
+	std::vector<std::vector<int> > color_classes = dsatur(adjacency_matrix_, vertices_);
 
-	for (int k = 0; k < vertices_; k++)
+	int min_color = color_classes.size();
+
+	int global_min_color = min_color;
+
+	std::cout << min_color << std::endl;
+
+	for (int i = 0; i < 100; ++i)
 	{
+		int iterations_index = 0;
 
-		for (int i = 0; i < 5; i++)
+		std::pair<bool, bool> reverse_is_periodic = std::make_pair(false, false);
+		std::pair<bool, bool> decreasing_is_periodic = std::make_pair(false, false);
+		std::pair<bool, bool> increasing_is_periodic = std::make_pair(false, false);
+
+		while (!reverse_is_periodic.first && iterations_index < 16)
 		{
-			std::sort(color_classes.begin(), color_classes.end(), sort_decreasing_size);
+			const int iterations = fib[iterations_index];
 
-			min_color = recolor_color_class(color_classes);
+			std::vector<int> array_of_sums;
+
+			for (int k = 0; k < iterations; ++k)
+			{
+
+				std::reverse(color_classes.begin(), color_classes.end());
+
+				min_color = recolor_color_class(color_classes);
+
+				if (min_color < global_min_color)
+				{
+					global_min_color = min_color;
+					std::cout << "reverse: " << global_min_color << std::endl;
+				}
+
+				int sum = 0;
+
+				for (unsigned j = 0; j < color_classes.size(); ++j)
+				{
+					sum += (j + 1) * color_classes[j].size();
+				}
+
+				array_of_sums.push_back(sum);
+
+			}
+			reverse_is_periodic = is_periodic(array_of_sums);
+
+			if (reverse_is_periodic.first)
+			{
+				array_of_sums.clear();
+			}
+			else
+			{
+				++iterations_index;
+			}
+
 		}
 
-		if(k % 5 == 0)
+		iterations_index = 0;
+
+		while (!increasing_is_periodic.first && iterations_index < 5)
 		{
-			std::sort(color_classes.begin(), color_classes.end(), sort_increasing_size);
+			const int iterations = fib[iterations_index];
 
-			min_color = recolor_color_class(color_classes);
+			std::vector<int> array_of_sums;
+
+			for (int k = 0; k < iterations; ++k)
+			{
+
+				std::sort(color_classes.begin(), color_classes.end(), sort_increasing_size);
+
+				min_color = recolor_color_class(color_classes);
+
+				if (min_color < global_min_color)
+				{
+					global_min_color = min_color;
+					std::cout << "sort_increasing_size: " << global_min_color << std::endl;
+				}
+
+				int sum = 0;
+
+				for (unsigned j = 0; j < color_classes.size(); ++j)
+				{
+					sum += (j + 1) * color_classes[j].size();
+				}
+
+				array_of_sums.push_back(sum);
+
+			}
+			increasing_is_periodic = is_periodic(array_of_sums);
+
+			if (increasing_is_periodic.first)
+			{
+				array_of_sums.clear();
+			}
+			else
+			{
+				++iterations_index;
+			}
+
 		}
-		else
+
+		iterations_index = 0;
+
+		while (!decreasing_is_periodic.first && iterations_index < 16)
 		{
-			std::reverse(color_classes.begin(), color_classes.end());
+			const int iterations = fib[iterations_index];
 
-			min_color = recolor_color_class(color_classes);
+			std::vector<int> array_of_sums;
+
+			for (int k = 0; k < iterations; ++k)
+			{
+				std::sort(color_classes.begin(), color_classes.end(), sort_decreasing_size);
+
+				min_color = recolor_color_class(color_classes);
+
+				if (min_color < global_min_color)
+				{
+					global_min_color = min_color;
+					std::cout << "sort_decreasing_size: " << global_min_color << std::endl;
+				}
+
+				int sum = 0;
+
+				for (unsigned j = 0; j < color_classes.size(); ++j)
+				{
+					sum += (j + 1) * color_classes[j].size();
+				}
+
+				array_of_sums.push_back(sum);
+
+			}
+			decreasing_is_periodic = is_periodic(array_of_sums);
+
+			if (decreasing_is_periodic.first)
+			{
+				array_of_sums.clear();
+			}
+			else
+			{
+				++iterations_index;
+			}
+
 		}
 
-		if(k % 3 == 0)
+		if ((decreasing_is_periodic.first && decreasing_is_periodic.second) ||(reverse_is_periodic.first && reverse_is_periodic.second))
 		{
 			sort_random_order(color_classes);
-
 			min_color = recolor_color_class(color_classes);
 
+			if (min_color < global_min_color)
+			{
+				global_min_color = min_color;
+				std::cout << global_min_color << std::endl;
+			}
 		}
-
 	}
 
-	double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	const double duration = (std::clock() - start) / double(CLOCKS_PER_SEC);
 
 	std::cout << "Running time: " << duration << '\n';
 
 	std::cout << "The graph can be colored with: " << min_color << " colors \n" << std::endl;
+}
+
+std::pair<bool,bool> graph::is_periodic(const std::vector<int> &array_of_sums)
+{
+	bool loop_found = false;
+	int loop_at_index = -2;
+	const unsigned iterations = array_of_sums.size();
+	for (unsigned i = 0; i < iterations; ++i)
+	{
+		for (unsigned j = i + 1; j < iterations; ++j)
+		{
+			if (array_of_sums[i] == array_of_sums[j])
+			{
+				const unsigned d = j - i;
+				if (iterations - 2 * d > i)
+				{
+					loop_found = true;
+					for (unsigned k = i; k < iterations - d; ++k)
+					{
+						if (array_of_sums[k] != array_of_sums[k + d])
+						{
+							loop_found = false;
+							break;
+						}
+
+					}
+				}
+
+				if (loop_found)
+					break;
+			}
+		}
+		if (loop_found)
+		{
+			loop_at_index = i;
+			break;
+		}
+	}
+
+	//if (loop_found) std::cout << "loop at: " << loop_at_index << std::endl;
+
+	bool loop_at_zero = loop_at_index == 0;
+
+	return std::make_pair(loop_found, loop_at_zero);
 }
 
 int graph::recolor_color_class(std::vector<std::vector<int> > &color_classes) const
@@ -184,15 +348,15 @@ int graph::recolor_color_class(std::vector<std::vector<int> > &color_classes) co
 
 	}
 
-	for (unsigned i = 0; i < color_classes.size(); i++)
-	{
-		color_classes[i].clear();
-	}
-
 	int max = 0;
 	for (int u = 0; u < vertices_; u++)
 	{
 		if (result[u] > max) max = result[u];
+	}
+
+	for (unsigned i = 0; i < color_classes.size(); i++)
+	{
+		color_classes[i].clear();
 	}
 
 	max += 1;
@@ -202,11 +366,7 @@ int graph::recolor_color_class(std::vector<std::vector<int> > &color_classes) co
 	for (int i = 0; i < vertices_; i++)
 	{
 		color_classes[result[i]].push_back(i);
-
 	}
-
-
-	color_classes.resize(max);
 
 	//for (int i = 0; i < max; i++)
 	//{
@@ -234,42 +394,68 @@ bool graph::sort_decreasing_size(const std::vector<int> &color_classes_1, const 
 
 void graph::sort_increasing_degree(std::vector<std::vector<int>>& color_classes) const
 {
-	int mini_pos;
-	for (unsigned i = 0; i < color_classes.size(); i++)
+	const int size = color_classes.size();
+	int* arr = new int[size];
+	for (int i = 0; i < size; i++)
 	{
-		mini_pos = i;
-		for (unsigned j = i + 1; j < color_classes.size(); j++)
-		{
-
-			if (get_color_class_degree(color_classes[j]) < get_color_class_degree(color_classes[mini_pos])) 
-			{
-				mini_pos = j;
-			}
-		}
-
-		auto temp = color_classes[mini_pos];
-		color_classes[mini_pos] = color_classes[i];
-		color_classes[i] = temp;
+		arr[i] = get_color_class_degree(color_classes[i]);
 	}
-}
 
-void graph::sort_decreasing_degree(std::vector<std::vector<int>>& color_classes) const
-{
 	for (unsigned i = 0; i < color_classes.size(); i++)
 	{
 		int mini_pos = i;
 		for (unsigned j = i + 1; j < color_classes.size(); j++)
 		{
-			if (get_color_class_degree(color_classes[j]) > get_color_class_degree(color_classes[mini_pos]))
+
+			if (arr[j] < arr[mini_pos])
 			{
 				mini_pos = j;
 			}
 		}
 
-		auto temp = color_classes[mini_pos];
+		const auto temp = color_classes[mini_pos];
 		color_classes[mini_pos] = color_classes[i];
 		color_classes[i] = temp;
+
+		const int tmp = arr[mini_pos];
+		arr[mini_pos] = arr[i];
+		arr[i] = tmp;
 	}
+
+	delete[] arr;
+}
+
+void graph::sort_decreasing_degree(std::vector<std::vector<int>>& color_classes) const
+{
+	const int size = color_classes.size();
+	int* arr = new int[size];
+	for (int i = 0; i < size; i++)
+	{
+		arr[i] = get_color_class_degree(color_classes[i]);
+	}
+
+	for (unsigned i = 0; i < color_classes.size(); i++)
+	{
+		int mini_pos = i;
+		for (unsigned j = i + 1; j > color_classes.size(); j++)
+		{
+
+			if (arr[j] < arr[mini_pos])
+			{
+				mini_pos = j;
+			}
+		}
+
+		const auto temp = color_classes[mini_pos];
+		color_classes[mini_pos] = color_classes[i];
+		color_classes[i] = temp;
+
+		const int tmp = arr[mini_pos];
+		arr[mini_pos] = arr[i];
+		arr[i] = tmp;
+	}
+
+	delete[] arr;
 }
 
 int graph::get_color_class_degree(std::vector<int>& color_class) const
@@ -295,6 +481,8 @@ void graph::sort_random_order(std::vector<std::vector<int>>& color_classes)
 		color_classes[new_pos] = color_classes[i];
 		color_classes[i] = temp;
 	}
+	//const unsigned seed = 401;
+	//std::shuffle(color_classes.begin(), color_classes.end(), std::default_random_engine(seed));
 }
 
 #pragma endregion 
@@ -307,18 +495,18 @@ void graph::init_dsatur() const
 
 	//std::vector<int> sorted_vertices = sort_graph(adjacency_matrix_, vertices_);
 
-	std::clock_t start = std::clock();
+	const std::clock_t start = std::clock();
 
-	int result = dsatur(adjacency_matrix_, vertices_);
+	const int result = dsatur(adjacency_matrix_, vertices_).size();
 
-	double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	const double duration = (std::clock() - start) / double(CLOCKS_PER_SEC);
 
 	std::cout << "Running time: " << duration << '\n';
 
 	std::cout << "The graph can be colored with: " << result << " colors \n" << std::endl;
 }
 
-int graph::dsatur(bool** adjacency_matrix, const int vertices)
+std::vector<std::vector<int> > graph::dsatur(bool** adjacency_matrix, const int vertices)
 {
 	std::vector<std::vector<int> > color_class(1);
 	bool *available_colors = new bool[vertices];
@@ -366,34 +554,10 @@ int graph::dsatur(bool** adjacency_matrix, const int vertices)
 
 	}
 
-	//int max = 0;
-	//for (int u = 0; u < vertices; u++)
-	//{
-	//	if (result[u] == -1) std::cout << "error!!!" << std::endl;
-	//	if (result[u] > max) max = result[u];
-	//}
-
-	//max += 1;
-
-	//for (int i = 0; i < color_class.size(); i++)
-	//{
-	//	if (color_class[i].size() > 1)
-	//	{
-	//		for (std::vector<int>::iterator it = color_class[i].begin(); it != color_class[i].end(); ++it)
-	//		{
-	//			
-	//			for (std::vector<int>::iterator it2 = it + 1; it2 != color_class[i].end(); ++it2)
-	//			{
-	//				if (adjacency_matrix[*it][*it2]) std::cout << "error!!!" << std::endl;
-	//			}
-	//		}
-	//	}
-	//}
-
 	delete[] result;
 	delete[] available_colors;
 
-	return color_class.size();
+	return color_class;
 }
 
 int graph::find_vertex_with_maximal_color_degree(bool** adjacency_matrix, const int vertices, std::vector<std::vector<int> > color_class, const int* result)
@@ -434,7 +598,6 @@ int graph::find_vertex_with_maximal_color_degree(bool** adjacency_matrix, const 
 		}
 	}
 
-	std::cout << maximal_color_degree << std::endl;
 	return maximal_color_degree_vertex;
 }
 
